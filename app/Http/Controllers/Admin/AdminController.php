@@ -46,8 +46,13 @@ class AdminController extends Controller
         $data = $this->validateProduct($request);
         $data['slug'] = $this->uniqueSlug($data['name']);
         $data['sku'] = trim($data['sku'] ?? '') ?: $this->uniqueSku($data['name']);
-        $data['image_url'] = $this->imagePath($request, 'image', $data['image_url'] ?? null);
-        unset($data['image']);
+        $galleryImages = $this->storeProductImages($request);
+        $data['image_url'] = $this->imagePath($request, 'image', $data['image_url'] ?? $galleryImages[0] ?? null);
+        if (! $request->hasFile('image') && empty($data['image_url']) && $galleryImages !== []) {
+            $data['image_url'] = array_shift($galleryImages);
+        }
+        $data['image_urls'] = array_values(array_filter($galleryImages, fn (string $image): bool => $image !== $data['image_url']));
+        unset($data['image'], $data['images']);
         Product::create($data);
 
         return redirect()->route('admin.products.index')->with('success', 'Product created.');
@@ -66,7 +71,12 @@ class AdminController extends Controller
         }
         $data['sku'] = trim($data['sku'] ?? '') ?: $product->sku ?: $this->uniqueSku($data['name'], $product->id);
         $data['image_url'] = $this->imagePath($request, 'image', $data['image_url'] ?? $product->image_url);
-        unset($data['image']);
+        $galleryImages = array_merge($product->galleryImages(), $this->storeProductImages($request));
+        $data['image_urls'] = array_values(array_filter(
+            array_unique($galleryImages),
+            fn (string $image): bool => $image !== $data['image_url'],
+        ));
+        unset($data['image'], $data['images']);
         $product->update($data);
 
         return redirect()->route('admin.products.index')->with('success', 'Product updated.');
@@ -308,6 +318,8 @@ class AdminController extends Controller
             'price' => ['required', 'numeric', 'min:0', 'max:99999999'],
             'compare_price' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
             'image' => ['nullable', 'image', 'max:6144'],
+            'images' => ['nullable', 'array', 'max:10'],
+            'images.*' => ['image', 'max:6144'],
             'image_url' => ['nullable', 'url', 'max:255'],
             'badge' => ['nullable', 'string', 'max:80'],
             'short_description' => ['nullable', 'string', 'max:1000'],
@@ -342,6 +354,13 @@ class AdminController extends Controller
         }
 
         return $request->input('image_url', $fallback);
+    }
+
+    private function storeProductImages(Request $request): array
+    {
+        return collect($request->file('images', []))
+            ->map(fn ($image): string => '/storage/'.$image->store('uploads', 'public'))
+            ->all();
     }
 
     private function uniqueSlug(string $name, ?int $ignoreId = null, string $model = Product::class): string

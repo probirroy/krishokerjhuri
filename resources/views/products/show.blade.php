@@ -4,19 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     @php
+        $productImages = $product->galleryImages();
+        $productImageUrls = array_map(
+            fn (string $image): string => \Illuminate\Support\Str::startsWith($image, ['http://', 'https://'])
+                ? $image
+                : asset(ltrim($image, '/')),
+            $productImages,
+        );
+        $displayImage = $productImageUrls[0] ?? 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1000&q=80';
         $pageTitle = $product->seo_title ? __($product->seo_title) : __($product->name).' | '.__($siteSettings['brand_name'] ?? 'Krishoker Jhuri');
         $pageDescription = $product->seo_description
             ? __($product->seo_description)
             : \Illuminate\Support\Str::limit(strip_tags(__($product->short_description ?: $product->description ?: $product->name)), 160);
-        $pageImage = $product->image_url
-            ? (\Illuminate\Support\Str::startsWith($product->image_url, ['http://', 'https://']) ? $product->image_url : asset(ltrim($product->image_url, '/')))
-            : asset('images/home-harvest.jpg');
+        $pageImage = $productImageUrls[0] ?? asset('images/home-harvest.jpg');
         $structuredProduct = [
             '@context' => 'https://schema.org',
             '@type' => 'Product',
             'name' => __($product->name),
             'description' => strip_tags(__($product->description ?: $product->short_description ?: $product->name)),
-            'image' => [$pageImage],
+            'image' => $productImageUrls ?: [$pageImage],
             'sku' => $product->sku,
             'category' => $product->category ? __($product->category->name) : null,
             'offers' => [
@@ -74,8 +80,19 @@
             <span>{{ __($product->name) }}</span>
         </nav>
         <div class="detail-grid">
-            <div class="detail-image">
-                <img src="{{ $product->image_url ?: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1000&q=80' }}" alt="{{ __($product->name) }}" fetchpriority="high" decoding="async">
+            <div class="detail-gallery" data-product-gallery>
+                <div class="detail-image">
+                    <img src="{{ $displayImage }}" alt="{{ __($product->name) }}" data-gallery-main fetchpriority="high" decoding="async">
+                </div>
+                @if(count($productImageUrls) > 1)
+                    <div class="detail-thumbnails" aria-label="{{ __('Product images') }}">
+                        @foreach($productImageUrls as $index => $image)
+                            <button class="detail-thumbnail" type="button" data-gallery-image="{{ $image }}" aria-label="{{ __('Show product image :number', ['number' => $index + 1]) }}" aria-pressed="{{ $index === 0 ? 'true' : 'false' }}">
+                                <img src="{{ $image }}" alt="" loading="lazy" decoding="async">
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
             </div>
             <section class="detail-copy">
                 <p class="eyebrow">{{ __($product->category?->name ?? 'Fresh produce') }}</p>

@@ -65,3 +65,21 @@ if (search && searchToggle) {
         }
     });
 }
+
+const productGallery = document.querySelector('[data-product-gallery]');
+
+if (productGallery) {
+    const mainImage = productGallery.querySelector('[data-gallery-main]');
+    const thumbnails = productGallery.querySelectorAll('[data-gallery-image]');
+
+    thumbnails.forEach((thumbnail) => {
+        thumbnail.addEventListener('click', () => {
+            if (!mainImage) return;
+
+            mainImage.src = thumbnail.dataset.galleryImage;
+            thumbnails.forEach((image) => {
+                image.setAttribute('aria-pressed', String(image === thumbnail));
+            });
+        });
+    });
+}

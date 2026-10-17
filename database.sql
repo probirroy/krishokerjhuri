@@ -119,6 +119,7 @@ CREATE TABLE `products` (
   `price` decimal(10,2) NOT NULL,
   `compare_price` decimal(10,2) DEFAULT NULL,
   `image_url` varchar(255) DEFAULT NULL,
+  `image_urls` json DEFAULT NULL,
   `badge` varchar(255) DEFAULT NULL,
   `short_description` text DEFAULT NULL,
   `description` text DEFAULT NULL,

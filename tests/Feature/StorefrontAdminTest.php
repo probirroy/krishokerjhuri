@@ -510,12 +510,39 @@ class StorefrontAdminTest extends TestCase
             'price' => 30,
             'stock' => 7,
             'image' => UploadedFile::fake()->create('spinach.png', 20, 'image/png'),
+            'images' => [
+                UploadedFile::fake()->create('spinach-detail.png', 20, 'image/png'),
+                UploadedFile::fake()->create('spinach-harvest.png', 20, 'image/png'),
+            ],
             'is_active' => 1,
         ])->assertRedirect('/admin/products');
 
         $product = Product::where('slug', 'fresh-spinach')->firstOrFail();
         $this->assertStringStartsWith('/storage/uploads/', $product->image_url);
         Storage::disk('public')->assertExists(substr($product->image_url, strlen('/storage/')));
+        $this->assertCount(3, $product->galleryImages());
+        foreach (array_slice($product->galleryImages(), 1) as $image) {
+            Storage::disk('public')->assertExists(substr($image, strlen('/storage/')));
+        }
+
+        $this->actingAs($admin)->put('/admin/products/'.$product->id, [
+            'category_id' => $category->id,
+            'name' => 'Fresh Spinach',
+            'unit' => 'bundle',
+            'price' => 30,
+            'stock' => 7,
+            'images' => [UploadedFile::fake()->create('spinach-closeup.png', 20, 'image/png')],
+            'is_active' => 1,
+        ])->assertRedirect('/admin/products');
+
+        $product->refresh();
+        $this->assertCount(4, $product->galleryImages());
+        $this->get(route('products.show', $product->slug))
+            ->assertOk()
+            ->assertSee('data-product-gallery', false)
+            ->assertSee('data-gallery-main', false)
+            ->assertSee('aria-pressed="true"', false)
+            ->assertSee(basename($product->image_urls[2]), false);
     }
 
     public function test_product_detail_and_cash_on_delivery_checkout_work(): void

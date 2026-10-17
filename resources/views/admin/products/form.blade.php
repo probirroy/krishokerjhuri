@@ -21,7 +21,8 @@
             <label>Unit<input name="unit" value="{{ old('unit', $product->unit ?: 'kg') }}" required placeholder="kg, bundle, box"></label>
             <label>Stock quantity<input type="number" name="stock" min="0" value="{{ old('stock', $product->stock ?? 0) }}" required></label>
             <label>Badge<input name="badge" value="{{ old('badge', $product->badge) }}" placeholder="Fresh, Seasonal, Best seller"></label>
-            <label>Image upload<input type="file" name="image" accept="image/*"><small>JPG, PNG, or WebP · max 6 MB</small></label>
+            <label>Main image upload<input type="file" name="image" accept="image/*"><small>Used as the cover photo · JPG, PNG, or WebP · max 6 MB</small></label>
+            <label>Additional product images<input type="file" name="images[]" accept="image/*" multiple><small>Select up to 10 more photos · max 6 MB each</small></label>
             <label class="full-field">Or image URL<input type="url" name="image_url" value="{{ old('image_url', $product->image_url) }}" placeholder="https://…"></label>
             <label class="full-field">Short description<textarea name="short_description" rows="2" maxlength="1000" placeholder="A clear one-sentence summary for product cards and search results">{{ old('short_description', $product->short_description) }}</textarea><small>Highlight the main product benefit, format, and typical use. Aim for about 160–300 characters; up to 1,000 are accepted.</small></label>
             <label class="full-field">Product description<textarea name="description" rows="8" maxlength="10000" placeholder="Describe the product, flavour or characteristics, serving or usage ideas, unit/pack size, and storage or preparation guidance. Use line breaks to organize the copy.">{{ old('description', $product->description) }}</textarea><small>Write specific, accurate buyer-focused details. Avoid unsupported health, organic-certification, origin, or shelf-life claims.</small></label>
@@ -35,7 +36,16 @@
             <label>Meta description<textarea name="seo_description" rows="3" maxlength="320" placeholder="A concise, accurate summary that helps shoppers understand this product.">{{ old('seo_description', $product->seo_description) }}</textarea><small>Recommended: about 150–160 characters; the limit is 320.</small></label>
             <label>Meta keywords<input name="seo_keywords" value="{{ old('seo_keywords', $product->seo_keywords) }}" maxlength="500" placeholder="product name, variety, use, relevant local search terms"><small>Comma-separated; optional. Search engines may ignore this tag.</small></label>
         </section>
-        @if($product->image_url)<div class="image-preview"><span>Current image</span><img src="{{ $product->image_url }}" alt="{{ $product->name }}"></div>@endif
+        @if($product->galleryImages())
+            <div class="product-admin-gallery">
+                <span>Current product images</span>
+                <div class="product-admin-gallery-images">
+                    @foreach($product->galleryImages() as $image)
+                        <img src="{{ $image }}" alt="{{ $product->name }}">
+                    @endforeach
+                </div>
+            </div>
+        @endif
         <div class="form-options">
             <label class="check-row"><input type="hidden" name="is_featured" value="0"><input type="checkbox" name="is_featured" value="1" @checked(old('is_featured', $product->is_featured))> Show on homepage</label>
             <label class="check-row"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" @checked(old('is_active', $product->exists ? $product->is_active : true))> Published in shop</label>

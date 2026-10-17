@@ -20,6 +20,8 @@ A Laravel storefront for farm-fresh groceries, with product/category management,
 7. Install and compile frontend assets with `npm install` and `npm run build`.
 8. Start the local web server with `php artisan serve`.
 
+In **Admin → Products**, set a cover image and optionally select up to 10 additional product photos. Product pages display the photos as a thumbnail gallery, and hovering over the main photo zooms it in.
+
 ## Install on XAMPP (Windows)
 
 ### 1. Install and check the tools
