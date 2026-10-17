@@ -81,8 +81,12 @@
         </nav>
         <div class="detail-grid">
             <div class="detail-gallery" data-product-gallery>
-                <div class="detail-image">
+                <div class="detail-gallery-stage">
+                    <div class="detail-image" data-zoom-source>
                     <img src="{{ $displayImage }}" alt="{{ __($product->name) }}" data-gallery-main fetchpriority="high" decoding="async">
+                        <span class="detail-image-lens" data-zoom-lens aria-hidden="true"></span>
+                    </div>
+                    <div class="detail-zoom-preview" data-zoom-preview aria-hidden="true"></div>
                 </div>
                 @if(count($productImageUrls) > 1)
                     <div class="detail-thumbnails" aria-label="{{ __('Product images') }}">
