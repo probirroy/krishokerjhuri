@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shop | {{ $siteSettings['brand_name'] ?? 'Krishoker Jhuri' }}</title>
+    <title>{{ $query !== '' ? __('Search results for :query', ['query' => $query]) : __('Shop') }} | {{ __($siteSettings['brand_name'] ?? 'Krishoker Jhuri') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="shop-page">
@@ -12,20 +12,20 @@
     <main class="shop-main">
         <div class="container shop-top">
             <div>
-                <p class="eyebrow">Organic Collection</p>
-                <h1>{{ $selectedCategory ? $selectedCategory->name : 'All Products' }}</h1>
-                <p class="shop-top-description">Good food, grown with care and brought straight from local farms.</p>
+                <p class="eyebrow">{{ __('Organic Collection') }}</p>
+                <h1>{{ $query !== '' ? __('Search results for :query', ['query' => $query]) : ($selectedCategory ? __($selectedCategory->name) : __('All Products')) }}</h1>
+                <p class="shop-top-description">{{ $query !== '' ? __('Products matching your search.') : __('Good food, grown with care and brought straight from local farms.') }}</p>
             </div>
-            <span class="shop-result-count">{{ $products->total() }} {{ \Illuminate\Support\Str::plural('product', $products->total()) }}</span>
+            <span class="shop-result-count">{{ \App\Support\LocalizedNumber::format($products->total()) }} {{ __('product') }}</span>
         </div>
 
         <div class="container shop-layout">
             <aside class="shop-sidebar">
-                <h3>Categories</h3>
+                <h3>{{ __('Categories') }}</h3>
                 <ul>
-                    <li><a href="{{ route('shop') }}" class="{{ !$selectedCategory ? 'active' : '' }}">All products</a></li>
+                    <li><a href="{{ route('shop') }}" class="{{ !$selectedCategory ? 'active' : '' }}">{{ __('All Products') }}</a></li>
                     @foreach($categories as $category)
-                        <li><a href="{{ route('shop', $category->slug) }}" class="{{ $selectedCategory && $selectedCategory->id === $category->id ? 'active' : '' }}">{{ $category->name }}</a></li>
+                        <li><a href="{{ route('shop', $category->slug) }}" class="{{ $selectedCategory && $selectedCategory->id === $category->id ? 'active' : '' }}">{{ __($category->name) }}</a></li>
                     @endforeach
                 </ul>
             </aside>
@@ -34,6 +34,9 @@
                 @foreach($products as $product)
                     @include('partials.product-card', ['product' => $product])
                 @endforeach
+                @if($products->isEmpty())
+                    <p class="shop-empty-state">{{ $query !== '' ? __('No products matched your search.') : __('No products are available in this category yet.') }}</p>
+                @endif
             </div>
         </div>
 

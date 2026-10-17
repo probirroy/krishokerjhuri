@@ -49,6 +49,14 @@
             </div>
         </section>
         <section class="content-section">
+            <div class="panel-head"><div><h2>Social media links</h2><p>Only links you add here will appear as clickable icons in the storefront footer.</p></div></div>
+            <div class="form-grid">
+                <label>Facebook URL<input type="url" name="social_facebook_url" value="{{ old('social_facebook_url', $settings['social_facebook_url'] ?? '') }}" placeholder="https://www.facebook.com/your-page"></label>
+                <label>Instagram URL<input type="url" name="social_instagram_url" value="{{ old('social_instagram_url', $settings['social_instagram_url'] ?? '') }}" placeholder="https://www.instagram.com/your-account"></label>
+                <label>YouTube URL<input type="url" name="social_youtube_url" value="{{ old('social_youtube_url', $settings['social_youtube_url'] ?? '') }}" placeholder="https://www.youtube.com/@your-channel"></label>
+            </div>
+        </section>
+        <section class="content-section">
             <div class="panel-head"><div><h2>Service benefits</h2><p>Only publish claims you can substantiate.</p></div></div>
             @foreach($benefits as $benefit)
                 <div class="benefit-edit-row">

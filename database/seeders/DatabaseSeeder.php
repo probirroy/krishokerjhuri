@@ -82,6 +82,8 @@ class DatabaseSeeder extends Seeder
             Product::query()->create($product);
         }
 
+        $this->call(ProductCatalogMetadataSeeder::class);
+
         foreach ([
             'brand_name' => 'Krishoker Jhuri',
             'tagline' => 'Fresh from Farmers • Pure for You',

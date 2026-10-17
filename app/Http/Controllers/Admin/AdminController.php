@@ -45,6 +45,7 @@ class AdminController extends Controller
     {
         $data = $this->validateProduct($request);
         $data['slug'] = $this->uniqueSlug($data['name']);
+        $data['sku'] = trim($data['sku'] ?? '') ?: $this->uniqueSku($data['name']);
         $data['image_url'] = $this->imagePath($request, 'image', $data['image_url'] ?? null);
         unset($data['image']);
         Product::create($data);
@@ -63,6 +64,7 @@ class AdminController extends Controller
         if ($product->name !== $data['name']) {
             $data['slug'] = $this->uniqueSlug($data['name'], $product->id);
         }
+        $data['sku'] = trim($data['sku'] ?? '') ?: $product->sku ?: $this->uniqueSku($data['name'], $product->id);
         $data['image_url'] = $this->imagePath($request, 'image', $data['image_url'] ?? $product->image_url);
         unset($data['image']);
         $product->update($data);
@@ -150,6 +152,9 @@ class AdminController extends Controller
             'featured_title' => ['nullable', 'string', 'max:180'],
             'contact_email' => ['nullable', 'email', 'max:180'],
             'store_location' => ['nullable', 'string', 'max:180'],
+            'social_facebook_url' => ['nullable', 'url:http,https', 'max:2048'],
+            'social_instagram_url' => ['nullable', 'url:http,https', 'max:2048'],
+            'social_youtube_url' => ['nullable', 'url:http,https', 'max:2048'],
             'logo' => ['nullable', 'image', 'max:2048'],
             'hero_image' => ['nullable', 'image', 'max:6144'],
             'hero_image_url' => ['nullable', 'url', 'max:2048'],
@@ -297,6 +302,8 @@ class AdminController extends Controller
         return $request->validate([
             'category_id' => ['required', 'exists:categories,id'],
             'name' => ['required', 'string', 'max:180'],
+            'sku' => ['nullable', 'string', 'max:80', Rule::unique('products', 'sku')->ignore($product?->id)],
+            'barcode' => ['nullable', 'string', 'max:120', Rule::unique('products', 'barcode')->ignore($product?->id)],
             'unit' => ['required', 'string', 'max:40'],
             'price' => ['required', 'numeric', 'min:0', 'max:99999999'],
             'compare_price' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
@@ -304,11 +311,27 @@ class AdminController extends Controller
             'image_url' => ['nullable', 'url', 'max:255'],
             'badge' => ['nullable', 'string', 'max:80'],
             'short_description' => ['nullable', 'string', 'max:1000'],
-            'description' => ['nullable', 'string', 'max:5000'],
+            'description' => ['nullable', 'string', 'max:10000'],
+            'seo_title' => ['nullable', 'string', 'max:70'],
+            'seo_description' => ['nullable', 'string', 'max:320'],
+            'seo_keywords' => ['nullable', 'string', 'max:500'],
             'stock' => ['required', 'integer', 'min:0'],
             'is_featured' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ]);
+    }
+
+    private function uniqueSku(string $name, ?int $ignoreId = null): string
+    {
+        $base = 'KJ-'.str($name)->slug()->upper()->limit(55, '')->toString();
+        $candidate = $base;
+        $suffix = 2;
+
+        while (Product::query()->where('sku', $candidate)->when($ignoreId, fn ($query) => $query->whereKeyNot($ignoreId))->exists()) {
+            $candidate = $base.'-'.$suffix++;
+        }
+
+        return $candidate;
     }
 
     private function imagePath(Request $request, string $field, ?string $fallback = null): ?string

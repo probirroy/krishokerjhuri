@@ -113,6 +113,8 @@ CREATE TABLE `products` (
   `category_id` bigint unsigned NOT NULL,
   `name` varchar(255) NOT NULL,
   `slug` varchar(255) NOT NULL,
+  `sku` varchar(80) DEFAULT NULL,
+  `barcode` varchar(120) DEFAULT NULL,
   `unit` varchar(255) NOT NULL DEFAULT 'kg',
   `price` decimal(10,2) NOT NULL,
   `compare_price` decimal(10,2) DEFAULT NULL,
@@ -120,6 +122,9 @@ CREATE TABLE `products` (
   `badge` varchar(255) DEFAULT NULL,
   `short_description` text DEFAULT NULL,
   `description` text DEFAULT NULL,
+  `seo_title` varchar(70) DEFAULT NULL,
+  `seo_description` varchar(320) DEFAULT NULL,
+  `seo_keywords` text DEFAULT NULL,
   `stock` int unsigned NOT NULL DEFAULT 0,
   `is_featured` tinyint(1) NOT NULL DEFAULT 0,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
@@ -127,6 +132,8 @@ CREATE TABLE `products` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `products_slug_unique` (`slug`),
+  UNIQUE KEY `products_sku_unique` (`sku`),
+  UNIQUE KEY `products_barcode_unique` (`barcode`),
   CONSTRAINT `products_category_id_foreign` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -219,6 +226,7 @@ INSERT INTO `migrations` (`migration`, `batch`) VALUES
   ('2026_10_14_141500_add_is_admin_to_users_table', 3),
   ('2026_10_14_141501_create_site_settings_table', 3),
   ('2026_10_14_141502_create_orders_tables', 3),
-  ('2026_10_14_144800_add_mobile_to_users_table', 4);
+  ('2026_10_14_144800_add_mobile_to_users_table', 4),
+  ('2026_10_16_090000_add_product_catalog_and_seo_fields_to_products_table', 5);
 
 SET FOREIGN_KEY_CHECKS = 1;

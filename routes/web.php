@@ -8,6 +8,14 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Auth\CustomerAuthController;
 use Illuminate\Support\Facades\Route;
 
+Route::post('/language/{locale}', function (string $locale) {
+    abort_unless(in_array($locale, ['en', 'bn'], true), 404);
+
+    session(['locale' => $locale]);
+
+    return redirect()->back();
+})->name('language.update');
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [CustomerAuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [CustomerAuthController::class, 'login'])->name('login.submit');
@@ -19,6 +27,7 @@ Route::post('/logout', [CustomerAuthController::class, 'logout'])->middleware('a
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/shop/{slug?}', [ProductController::class, 'index'])->name('shop');
 Route::post('/products/{product}/add-to-cart', [ProductController::class, 'addToCart'])->name('products.add_to_cart');
+Route::post('/products/{product}/quick-buy', [ProductController::class, 'quickBuy'])->name('products.quick_buy');
 Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/cart', [CartController::class, 'index'])->name('cart');
 Route::post('/cart/{id}/update', [CartController::class, 'update'])->name('cart.update');

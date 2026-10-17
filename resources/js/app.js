@@ -1,5 +1,3 @@
-import './bootstrap';
-
 const themeKey = 'kj-theme';
 const savedTheme = window.localStorage.getItem(themeKey);
 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -15,18 +13,55 @@ document.querySelectorAll('.theme-toggle').forEach((toggle) => {
 
 const menuToggle = document.querySelector('.menu-toggle');
 const storeNavigation = document.querySelector('#store-navigation');
+const headerInner = storeNavigation?.closest('.header-inner');
+
+const selectNavigationLink = (selectedLink) => {
+    storeNavigation.querySelectorAll('a').forEach((link) => {
+        const isSelected = link === selectedLink;
+        link.classList.toggle('active', isSelected);
+        link.classList.toggle('is-selected', isSelected);
+    });
+};
 
 if (menuToggle && storeNavigation) {
+    const currentHashLink = [...storeNavigation.querySelectorAll('a')].find((link) => {
+        const url = new URL(link.href);
+        return url.pathname === window.location.pathname && url.hash === window.location.hash && url.hash;
+    });
+
+    if (currentHashLink) {
+        selectNavigationLink(currentHashLink);
+    }
+
     menuToggle.addEventListener('click', () => {
         const isOpen = menuToggle.getAttribute('aria-expanded') === 'true';
         menuToggle.setAttribute('aria-expanded', String(!isOpen));
         storeNavigation.classList.toggle('is-open', !isOpen);
+        headerInner?.classList.toggle('navigation-open', !isOpen);
     });
 
     storeNavigation.addEventListener('click', (event) => {
-        if (event.target instanceof HTMLAnchorElement) {
-            menuToggle.setAttribute('aria-expanded', 'false');
-            storeNavigation.classList.remove('is-open');
+        if (!(event.target instanceof Element)) return;
+
+        const link = event.target.closest('a');
+        if (!link) return;
+
+        selectNavigationLink(link);
+        menuToggle.setAttribute('aria-expanded', 'false');
+        storeNavigation.classList.remove('is-open');
+        headerInner?.classList.remove('navigation-open');
+    });
+}
+
+const search = document.querySelector('.header-search');
+const searchToggle = document.querySelector('.header-search-toggle');
+
+if (search && searchToggle) {
+    searchToggle.addEventListener('click', () => {
+        const isOpen = search.classList.toggle('is-open');
+        searchToggle.setAttribute('aria-expanded', String(isOpen));
+        if (isOpen) {
+            search.querySelector('input[name="q"]')?.focus();
         }
     });
 }

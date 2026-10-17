@@ -15,7 +15,7 @@
             <div class="table-scroll"><table class="admin-table"><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Visibility</th><th>Actions</th></tr></thead><tbody>
                 @foreach($products as $product)
                     <tr>
-                        <td class="product-table-cell"><img src="{{ $product->image_url ?: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=120&q=70' }}" alt=""><div><strong>{{ $product->name }}</strong><small>{{ $product->slug }}</small></div></td>
+                        <td class="product-table-cell"><img src="{{ $product->image_url ?: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=120&q=70' }}" alt=""><div><strong>{{ $product->name }}</strong><small>{{ $product->slug }}</small><small>SKU: {{ $product->sku ?: '—' }} · Barcode: {{ $product->barcode ?: '—' }}</small></div></td>
                         <td>{{ $product->category?->name }}</td><td>৳{{ number_format($product->price, 2) }} / {{ $product->unit }}</td><td>{{ $product->stock }}</td>
                         <td><span class="status-pill {{ $product->is_active ? 'delivered' : 'cancelled' }}">{{ $product->is_active ? 'Published' : 'Hidden' }}</span></td>
                         <td class="table-actions"><a href="{{ route('admin.products.edit', $product) }}">Edit</a><form action="{{ route('admin.products.delete', $product) }}" method="POST" onsubmit="return confirm('Delete this product?')">@csrf @method('DELETE')<button type="submit">Delete</button></form></td>

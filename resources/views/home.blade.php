@@ -1,10 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $siteSettings['brand_name'] ?? 'Krishoker Jhuri' }}</title>
-    <meta name="description" content="{{ $siteSettings['hero_description'] ?? 'Fresh from farmers to your home.' }}">
+    <title>{{ __($siteSettings['brand_name'] ?? 'Krishoker Jhuri') }}</title>
+    <meta name="description" content="{{ __($siteSettings['hero_description'] ?? 'Fresh from farmers to your home.') }}">
+    <link rel="preload" as="image" href="{{ $siteSettings['hero_image_path'] ?? asset('images/home-harvest.jpg') }}" fetchpriority="high">
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="home-page">
@@ -12,26 +14,26 @@
 
     <main>
         <section class="reference-hero">
-            <img class="reference-hero-image" src="{{ $siteSettings['hero_image_path'] ?? asset('images/home-harvest.jpg') }}" alt="" fetchpriority="high">
+            <img class="reference-hero-image" src="{{ $siteSettings['hero_image_path'] ?? asset('images/home-harvest.jpg') }}" alt="" fetchpriority="high" decoding="async">
             <div class="reference-hero-shade"></div>
             <div class="container reference-hero-inner">
                 <div class="reference-hero-copy">
-                    <p class="reference-eyebrow">{{ $siteSettings['hero_eyebrow'] ?? 'Organic Vegetables' }}</p>
-                    <h1>{{ $siteSettings['hero_title'] ?? ($siteSettings['brand_name'] ?? 'Krishoker Jhuri') }}</h1>
-                    <h2>{{ $siteSettings['hero_subtitle'] ?? 'Fresh, Natural, Healthy' }}</h2>
-                    <p>{{ $siteSettings['hero_description'] ?? 'Bringing farm-fresh organic vegetables directly from local farmers to your home.' }}</p>
-                    <a class="reference-shop-button" href="{{ route('shop') }}">{{ $siteSettings['hero_button_label'] ?? 'Shop Now' }} <span aria-hidden="true">→</span></a>
+                    <p class="reference-eyebrow">{{ __($siteSettings['hero_eyebrow'] ?? 'Organic Vegetables') }}</p>
+                    <h1>{{ __($siteSettings['hero_title'] ?? ($siteSettings['brand_name'] ?? 'Krishoker Jhuri')) }}</h1>
+                    <h2>{{ __($siteSettings['hero_subtitle'] ?? 'Fresh, Natural, Healthy') }}</h2>
+                    <p>{{ __($siteSettings['hero_description'] ?? 'Bringing farm-fresh organic vegetables directly from local farmers to your home.') }}</p>
+                    <a class="reference-shop-button" href="{{ route('shop') }}">{{ __($siteSettings['hero_button_label'] ?? 'Shop Now') }} <span aria-hidden="true">→</span></a>
                 </div>
-                @if(!empty($siteSettings['hero_image_path']))
-                    <div class="reference-hero-badge" aria-label="{{ $siteSettings['hero_badge'] ?? 'Pure organic fresh' }}">
-                        <span>{{ $siteSettings['hero_badge'] ?? 'Pure Organic Fresh' }}</span>
+                @if(!empty($siteSettings['hero_image_path']) || app()->getLocale() === 'bn')
+                    <div class="reference-hero-badge" aria-label="{{ __($siteSettings['hero_badge'] ?? 'Pure Organic Fresh') }}">
+                        <span>{{ __($siteSettings['hero_badge'] ?? 'Pure Organic Fresh') }}</span>
                         <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 34V18m0 8c-9 0-14-5-14-13 9 0 14 4 14 13Zm0-5c0-9 5-14 14-14 0 9-5 14-14 14Z"/></svg>
                     </div>
                 @endif
             </div>
         </section>
 
-        <section class="reference-category-strip" aria-label="Shop categories">
+        <section class="reference-category-strip" aria-label="{{ __('Shop categories') }}">
             <div class="container reference-category-list">
                 @foreach($categories as $category)
                     @php
@@ -47,14 +49,14 @@
                     @endphp
                     <a href="{{ route('shop', $category->slug) }}" class="reference-category">
                         <span class="reference-category-icon"><svg viewBox="0 0 28 28" aria-hidden="true">{!! $categoryArtwork !!}</svg></span>
-                        <span>{{ $category->name }}</span>
+                        <span>{{ __($category->name) }}</span>
                         <span class="reference-category-arrow" aria-hidden="true">→</span>
                     </a>
                 @endforeach
             </div>
         </section>
 
-        <section class="reference-benefits" aria-label="Why shop with us">
+        <section class="reference-benefits" aria-label="{{ __('Why shop with us') }}">
             <div class="container reference-benefits-list">
                 @foreach($benefits as $benefit)
                     <div class="reference-benefit">
@@ -74,8 +76,8 @@
                             @endswitch
                         </span>
                         <div>
-                            <h3>{{ $benefit->title }}</h3>
-                            <p>{{ $benefit->subtitle }}</p>
+                            <h3>{{ __($benefit->title) }}</h3>
+                            <p>{{ __($benefit->subtitle) }}</p>
                         </div>
                     </div>
                 @endforeach
@@ -86,34 +88,41 @@
             <div class="container reference-featured-grid">
                 <article class="reference-farmer-card" id="farmers">
                     <div class="reference-farmer-image">
-                        <img src="{{ $farmerFeature->image_url ?? 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=900&q=85' }}" alt="Fresh green crops growing at a local farm" loading="lazy">
+                        <img src="{{ $farmerFeature->image_url ?? 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=900&q=85' }}" alt="{{ __('Fresh green crops growing at a local farm') }}" loading="lazy">
                     </div>
                     <div class="reference-farmer-copy">
-                        <p class="reference-eyebrow">{{ $farmerFeature->subtitle ?? 'Support Local Farmers' }}</p>
-                        <h2>{{ $farmerFeature->title ?? 'Support Local Farmers' }}</h2>
-                        <p>{{ $farmerFeature->description ?? 'Your choice helps local farmers grow and build a healthier, greener future.' }}</p>
-                        <a href="{{ $farmerFeature->cta_url ?? route('shop') }}">{{ $farmerFeature->cta_label ?? 'Learn More' }} <span aria-hidden="true">→</span></a>
+                        <p class="reference-eyebrow">{{ __($farmerFeature->subtitle ?? 'Support Local Farmers') }}</p>
+                        <h2>{{ __($farmerFeature->title ?? 'Support Local Farmers') }}</h2>
+                        <p>{{ __($farmerFeature->description ?? 'Your choice helps local farmers grow and build a healthier, greener future.') }}</p>
+                        <a href="{{ $farmerFeature->cta_url ?? route('shop') }}">{{ __($farmerFeature->cta_label ?? 'Learn More') }} <span aria-hidden="true">→</span></a>
                     </div>
                 </article>
 
                 <div class="reference-popular">
                     <div class="reference-popular-heading">
-                        <div><p class="reference-eyebrow">Explore our fresh and organic products</p><h2>Popular Categories</h2></div>
-                        <a href="{{ route('shop') }}" aria-label="View all products">View all <span aria-hidden="true">→</span></a>
+                        <div><p class="reference-eyebrow">{{ __('Explore our fresh and organic products') }}</p><h2>{{ __('Popular Categories') }}</h2></div>
+                        <a href="{{ route('shop') }}" aria-label="{{ __('View all products') }}">{{ __('View all') }} <span aria-hidden="true">→</span></a>
                     </div>
                     <div class="reference-product-list">
                         @foreach($featuredProducts as $product)
                             <article class="reference-product-card">
                                 <a class="reference-product-image" href="{{ route('products.show', $product->slug) }}">
-                                    <img src="{{ $product->image_url ?: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $product->name }}" loading="lazy">
+                                    <img src="{{ $product->image_url ?: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80' }}" alt="{{ __($product->name) }}" loading="lazy">
                                 </a>
                                 <div class="reference-product-info">
-                                    <a class="reference-product-name" href="{{ route('products.show', $product->slug) }}">{{ $product->name }}</a>
-                                    <span>৳{{ number_format($product->price, 0) }} / {{ $product->unit }}</span>
-                                    <form action="{{ route('products.add_to_cart', $product) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" aria-label="Add {{ $product->name }} to cart">+</button>
-                                    </form>
+                                    <a class="reference-product-name" href="{{ route('products.show', $product->slug) }}">{{ __($product->name) }}</a>
+                                    <span>৳{{ \App\Support\LocalizedNumber::format($product->price) }} / {{ __($product->unit) }}</span>
+                                    @include('partials.product-identifiers', ['product' => $product])
+                                    <div class="reference-product-actions">
+                                        <form action="{{ route('products.add_to_cart', $product) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" aria-label="{{ __('Add :name to cart', ['name' => __($product->name)]) }}">+</button>
+                                        </form>
+                                        <form action="{{ route('products.quick_buy', $product) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" aria-label="{{ __('Quick buy :name', ['name' => __($product->name)]) }}">{{ __('Buy') }}</button>
+                                        </form>
+                                    </div>
                                 </div>
                             </article>
                         @endforeach
@@ -126,15 +135,30 @@
     <footer class="site-footer reference-footer" id="footer">
         <div class="container reference-footer-inner">
             <div class="reference-footer-brand">
-                <strong>{{ $siteSettings['brand_name'] ?? 'Krishoker Jhuri' }}</strong>
+                <strong>{{ __($siteSettings['brand_name'] ?? 'Krishoker Jhuri') }}</strong>
                 <span aria-hidden="true">|</span>
-                <span>{{ $siteSettings['tagline'] ?? 'Fresh from Farmers • Pure for You' }}</span>
+                <span>{{ __($siteSettings['tagline'] ?? 'Fresh from Farmers • Pure for You') }}</span>
+                <span class="reference-footer-copyright">&copy; {{ now()->year }} {{ __($siteSettings['brand_name'] ?? 'Krishoker Jhuri') }}</span>
             </div>
-            <div class="reference-footer-social" aria-label="Social media">
-                <span aria-hidden="true">f</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.8" r=".7" fill="currentColor" stroke="none"/></svg>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg>
-            </div>
+            @if(!empty($siteSettings['social_facebook_url']) || !empty($siteSettings['social_instagram_url']) || !empty($siteSettings['social_youtube_url']))
+                <nav class="reference-footer-social" aria-label="{{ __('Social media') }}">
+                    @if(!empty($siteSettings['social_facebook_url']))
+                        <a href="{{ $siteSettings['social_facebook_url'] }}" target="_blank" rel="noopener noreferrer" aria-label="{{ __('Facebook') }}" title="{{ __('Facebook') }}">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 8h3V4h-3c-3 0-5 2-5 5v2H6v4h3v5h4v-5h3l1-4h-4V9c0-.7.3-1 1-1Z"/></svg>
+                        </a>
+                    @endif
+                    @if(!empty($siteSettings['social_instagram_url']))
+                        <a href="{{ $siteSettings['social_instagram_url'] }}" target="_blank" rel="noopener noreferrer" aria-label="{{ __('Instagram') }}" title="{{ __('Instagram') }}">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.8" r=".7" fill="currentColor" stroke="none"/></svg>
+                        </a>
+                    @endif
+                    @if(!empty($siteSettings['social_youtube_url']))
+                        <a href="{{ $siteSettings['social_youtube_url'] }}" target="_blank" rel="noopener noreferrer" aria-label="{{ __('YouTube') }}" title="{{ __('YouTube') }}">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg>
+                        </a>
+                    @endif
+                </nav>
+            @endif
         </div>
     </footer>
 </body>

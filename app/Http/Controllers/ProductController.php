@@ -5,35 +5,48 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\SiteSetting;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
 
 class ProductController extends Controller
 {
-    public function index(?string $slug = null)
+    public function index(Request $request, ?string $slug = null)
     {
-        $categories = Schema::hasTable('categories')
-            ? Category::query()->where('is_active', true)->orderBy('sort_order')->get()
-            : collect();
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+        ]);
+        $query = trim($validated['q'] ?? '');
+
+        $categories = Category::query()->where('is_active', true)->orderBy('sort_order')->get();
 
         $selectedCategory = null;
-        $productsQuery = Schema::hasTable('products')
-            ? Product::query()->with('category')->where('is_active', true)
-            : null;
+        $productsQuery = Product::query()->with('category')->where('is_active', true);
 
-        if ($slug && Schema::hasTable('categories')) {
+        if ($slug) {
             $selectedCategory = Category::query()->where('slug', $slug)->where('is_active', true)->first();
             if ($selectedCategory) {
-                $productsQuery?->where('category_id', $selectedCategory->id);
+                $productsQuery->where('category_id', $selectedCategory->id);
             }
         }
 
-        $products = $productsQuery ? $productsQuery->orderBy('name')->paginate(12) : new \Illuminate\Pagination\LengthAwarePaginator([], 0, 12);
+        if ($query !== '') {
+            $productsQuery->where(function ($productQuery) use ($query) {
+                $like = '%'.$query.'%';
+                $productQuery->where('name', 'like', $like)
+                    ->orWhere('sku', 'like', $like)
+                    ->orWhere('barcode', 'like', $like)
+                    ->orWhere('short_description', 'like', $like)
+                    ->orWhere('description', 'like', $like)
+                    ->orWhereHas('category', fn ($categoryQuery) => $categoryQuery->where('name', 'like', $like));
+            });
+        }
+
+        $products = $productsQuery->orderBy('name')->paginate(12)->withQueryString();
 
         $cartCount = collect(session('cart', []))->sum('quantity');
         $siteSettings = SiteSetting::values();
 
-        return view('shop', compact('categories', 'selectedCategory', 'products', 'cartCount', 'siteSettings'));
+        return view('shop', compact('categories', 'selectedCategory', 'products', 'cartCount', 'siteSettings', 'query'));
     }
 
     public function show(Product $product)
@@ -54,7 +67,25 @@ class ProductController extends Controller
         return view('products.show', compact('product', 'relatedProducts', 'cartCount', 'siteSettings'));
     }
 
-    public function addToCart(Request $request, Product $product)
+    public function addToCart(Product $product)
+    {
+        if ($response = $this->addProductToCart($product)) {
+            return $response;
+        }
+
+        return redirect()->back()->with('success', __(':name added to your cart.', ['name' => __($product->name)]));
+    }
+
+    public function quickBuy(Product $product): RedirectResponse
+    {
+        if ($response = $this->addProductToCart($product)) {
+            return $response;
+        }
+
+        return redirect()->route('checkout');
+    }
+
+    private function addProductToCart(Product $product): ?RedirectResponse
     {
         abort_unless($product->is_active, 404);
         $cart = session()->get('cart', []);
@@ -73,6 +104,6 @@ class ProductController extends Controller
 
         session()->put('cart', $cart);
 
-        return redirect()->back()->with('success', $product->name.' added to your cart.');
+        return null;
     }
 }

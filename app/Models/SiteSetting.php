@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Schema;
 
 class SiteSetting extends Model
 {
@@ -11,10 +10,6 @@ class SiteSetting extends Model
 
     public static function values(): array
     {
-        if (! Schema::hasTable('site_settings')) {
-            return [];
-        }
-
         return static::query()->pluck('value', 'key')->all();
     }
 
