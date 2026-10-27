@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Mail\ContactMessage;
 use App\Models\BlogPost;
+use App\Models\Order;
 use App\Models\SiteSetting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -30,6 +31,63 @@ class StorePagesTest extends TestCase
             ->assertSee('Send a message')
             ->assertSee('hello@krishokerjhuri.com')
             ->assertSee('Dhaka, Bangladesh');
+    }
+
+    public function test_footer_policy_links_open_their_pages(): void
+    {
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee(route('policies.terms'), false)
+            ->assertSee(route('policies.returns'), false)
+            ->assertSee(route('policies.support'), false)
+            ->assertSee(route('policies.privacy'), false)
+            ->assertSee('data-install-app', false)
+            ->assertSee('Dhaka, Bangladesh')
+            ->assertSee('hello@krishokerjhuri.com');
+
+        $this->get(route('policies.terms'))->assertOk()->assertSee('Terms and conditions');
+        $this->get(route('policies.returns'))->assertOk()->assertSee('Returns and order issues');
+        $this->get(route('policies.support'))->assertOk()->assertSee('Support policy');
+        $this->get(route('policies.privacy'))->assertOk()->assertSee('Privacy policy');
+    }
+
+    public function test_customer_order_history_is_private_to_the_signed_in_customer(): void
+    {
+        $customer = User::factory()->create();
+        $otherCustomer = User::factory()->create();
+        $orderDetails = [
+            'customer_name' => 'Store Customer',
+            'email' => 'customer@example.test',
+            'phone' => '01700000000',
+            'address' => '12 Farm Road',
+            'district' => 'Dhaka',
+            'payment_method' => 'cod',
+            'status' => 'pending',
+            'subtotal' => 100,
+            'shipping' => 70,
+            'total' => 170,
+        ];
+
+        Order::create($orderDetails + [
+            'user_id' => $customer->id,
+            'order_number' => 'KJ-CUSTOMER-0001',
+        ]);
+        Order::create($orderDetails + [
+            'user_id' => $otherCustomer->id,
+            'order_number' => 'KJ-OTHER-0001',
+        ]);
+
+        $this->get(route('account.orders'))
+            ->assertRedirect(route('login'));
+
+        $this->actingAs($customer)
+            ->get(route('account.orders'))
+            ->assertOk()
+            ->assertSee('KJ-CUSTOMER-0001')
+            ->assertDontSee('KJ-OTHER-0001');
+
+        $admin = User::factory()->create(['is_admin' => true]);
+        $this->actingAs($admin)->get(route('account.orders'))->assertForbidden();
     }
 
     public function test_only_published_and_due_blog_posts_are_visible(): void

@@ -117,6 +117,7 @@ class CartController extends Controller
 
             $order = Order::create([
                 ...$data,
+                'user_id' => auth()->id(),
                 'order_number' => 'KJ-'.strtoupper(Str::random(12)),
                 'status' => 'pending',
                 'subtotal' => $subtotal,

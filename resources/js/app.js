@@ -67,6 +67,44 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+const installAppButton = document.querySelector('[data-install-app]');
+const installAppStatus = document.querySelector('[data-install-status]');
+let deferredInstallPrompt = null;
+
+if (installAppButton && installAppStatus) {
+    window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+    });
+
+    installAppButton.addEventListener('click', async () => {
+        if (!deferredInstallPrompt) {
+            installAppStatus.textContent = installAppButton.dataset.installManual;
+            return;
+        }
+
+        const promptEvent = deferredInstallPrompt;
+        deferredInstallPrompt = null;
+
+        try {
+            await promptEvent.prompt();
+            const choice = await promptEvent.userChoice;
+            installAppStatus.textContent = choice.outcome === 'accepted'
+                ? installAppButton.dataset.installAccepted
+                : installAppButton.dataset.installDismissed;
+        } catch (error) {
+            console.error('App installation prompt failed:', error);
+            installAppStatus.textContent = installAppButton.dataset.installFailed;
+        }
+    });
+
+    window.addEventListener('appinstalled', () => {
+        deferredInstallPrompt = null;
+        installAppButton.hidden = true;
+        installAppStatus.textContent = installAppButton.dataset.installComplete;
+    });
+}
+
 const deliveryDistrict = document.querySelector('#delivery-district');
 const deliveryCharge = document.querySelector('[data-delivery-charge]');
 const checkoutTotal = document.querySelector('[data-checkout-total]');

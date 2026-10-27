@@ -34,6 +34,13 @@ Route::get('/blog', [StorePageController::class, 'blog'])->name('blog.index');
 Route::get('/blog/{slug}', [StorePageController::class, 'article'])->name('blog.show');
 Route::get('/contact', [StorePageController::class, 'contact'])->name('contact');
 Route::post('/contact', [StorePageController::class, 'sendContact'])->middleware('throttle:5,1')->name('contact.send');
+Route::get('/policies/terms', [StorePageController::class, 'terms'])->name('policies.terms');
+Route::get('/policies/returns', [StorePageController::class, 'returns'])->name('policies.returns');
+Route::get('/policies/support', [StorePageController::class, 'support'])->name('policies.support');
+Route::get('/policies/privacy', [StorePageController::class, 'privacy'])->name('policies.privacy');
+Route::get('/account/orders', [StorePageController::class, 'orders'])
+    ->middleware('auth')
+    ->name('account.orders');
 Route::get('/shop/{slug?}', [ProductController::class, 'index'])->name('shop');
 Route::post('/products/{product}/add-to-cart', [ProductController::class, 'addToCart'])->name('products.add_to_cart');
 Route::post('/products/{product}/quick-buy', [ProductController::class, 'quickBuy'])->name('products.quick_buy');

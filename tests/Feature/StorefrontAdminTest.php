@@ -641,6 +641,42 @@ class StorefrontAdminTest extends TestCase
         $this->assertSame(3, $product->fresh()->stock);
     }
 
+    public function test_checkout_links_orders_to_the_signed_in_customer(): void
+    {
+        $category = Category::create([
+            'name' => 'Vegetables',
+            'slug' => 'account-vegetables',
+            'is_active' => true,
+        ]);
+        $product = Product::create([
+            'category_id' => $category->id,
+            'name' => 'Account Test Tomato',
+            'slug' => 'account-test-tomato',
+            'unit' => 'kg',
+            'price' => 50,
+            'stock' => 2,
+            'is_active' => true,
+        ]);
+        $customer = User::factory()->create(['is_admin' => false]);
+
+        $this->actingAs($customer)
+            ->withSession(['cart' => [$product->id => ['id' => $product->id, 'quantity' => 1]]])
+            ->post(route('checkout.place'), [
+                'customer_name' => $customer->name,
+                'email' => $customer->email,
+                'phone' => '01700000000',
+                'address' => '12 Farm Road',
+                'district' => 'Dhaka',
+                'payment_method' => 'cod',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('orders', [
+            'user_id' => $customer->id,
+            'email' => $customer->email,
+        ]);
+    }
+
     public function test_delivery_charge_uses_configured_fee_for_dhaka_and_other_districts(): void
     {
         SiteSetting::set('delivery_inside_dhaka', '85');
