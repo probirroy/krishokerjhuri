@@ -161,7 +161,40 @@ class AdminController extends Controller
             'featured_eyebrow' => ['nullable', 'string', 'max:120'],
             'featured_title' => ['nullable', 'string', 'max:180'],
             'contact_email' => ['nullable', 'email', 'max:180'],
+            'contact_phone' => ['nullable', 'string', 'max:60'],
             'store_location' => ['nullable', 'string', 'max:180'],
+            'store_hours' => ['nullable', 'string', 'max:180'],
+            'about_title' => ['nullable', 'string', 'max:180'],
+            'about_eyebrow' => ['nullable', 'string', 'max:120'],
+            'about_description' => ['nullable', 'string', 'max:5000'],
+            'about_button_label' => ['nullable', 'string', 'max:80'],
+            'about_detail_eyebrow' => ['nullable', 'string', 'max:120'],
+            'about_detail_title' => ['nullable', 'string', 'max:180'],
+            'about_detail_description' => ['nullable', 'string', 'max:2000'],
+            'about_values_eyebrow' => ['nullable', 'string', 'max:120'],
+            'about_values_title' => ['nullable', 'string', 'max:180'],
+            'about_value_1_title' => ['nullable', 'string', 'max:120'],
+            'about_value_1_description' => ['nullable', 'string', 'max:500'],
+            'about_value_2_title' => ['nullable', 'string', 'max:120'],
+            'about_value_2_description' => ['nullable', 'string', 'max:500'],
+            'about_value_3_title' => ['nullable', 'string', 'max:120'],
+            'about_value_3_description' => ['nullable', 'string', 'max:500'],
+            'farmers_page_title' => ['nullable', 'string', 'max:180'],
+            'farmers_page_eyebrow' => ['nullable', 'string', 'max:120'],
+            'farmers_page_description' => ['nullable', 'string', 'max:5000'],
+            'farmers_button_label' => ['nullable', 'string', 'max:80'],
+            'farmers_detail_description' => ['nullable', 'string', 'max:2000'],
+            'farmers_cta_title' => ['nullable', 'string', 'max:180'],
+            'farmers_cta_description' => ['nullable', 'string', 'max:1000'],
+            'farmers_cta_button_label' => ['nullable', 'string', 'max:80'],
+            'blog_page_title' => ['nullable', 'string', 'max:180'],
+            'blog_page_description' => ['nullable', 'string', 'max:1000'],
+            'blog_empty_title' => ['nullable', 'string', 'max:180'],
+            'blog_empty_description' => ['nullable', 'string', 'max:500'],
+            'contact_page_title' => ['nullable', 'string', 'max:180'],
+            'contact_page_description' => ['nullable', 'string', 'max:1000'],
+            'contact_eyebrow' => ['nullable', 'string', 'max:120'],
+            'contact_form_title' => ['nullable', 'string', 'max:180'],
             'social_facebook_url' => ['nullable', 'url:http,https', 'max:2048'],
             'social_instagram_url' => ['nullable', 'url:http,https', 'max:2048'],
             'social_youtube_url' => ['nullable', 'url:http,https', 'max:2048'],
@@ -172,7 +205,13 @@ class AdminController extends Controller
             'promo_subtitle' => ['nullable', 'string', 'max:180'],
             'promo_description' => ['nullable', 'string', 'max:1500'],
             'promo_image' => ['nullable', 'image', 'max:6144'],
+            'about_image' => ['nullable', 'image', 'max:6144'],
+            'about_image_url' => ['nullable', 'url:http,https', 'max:2048'],
+            'farmers_page_image' => ['nullable', 'image', 'max:6144'],
+            'farmers_page_image_url' => ['nullable', 'url:http,https', 'max:2048'],
             'promo_cta_label' => ['nullable', 'string', 'max:80'],
+            'delivery_inside_dhaka' => ['sometimes', 'required', 'numeric', 'min:0', 'max:100000'],
+            'delivery_outside_dhaka' => ['sometimes', 'required', 'numeric', 'min:0', 'max:100000'],
         ]);
 
         if ($request->hasFile('logo')) {
@@ -186,8 +225,18 @@ class AdminController extends Controller
         if ($request->hasFile('promo_image')) {
             $data['promo_image_path'] = $this->imagePath($request, 'promo_image');
         }
+        if ($request->hasFile('about_image')) {
+            $data['about_image_path'] = '/storage/'.$request->file('about_image')->store('uploads', 'public');
+        } elseif (! empty($data['about_image_url'])) {
+            $data['about_image_path'] = $data['about_image_url'];
+        }
+        if ($request->hasFile('farmers_page_image')) {
+            $data['farmers_page_image_path'] = '/storage/'.$request->file('farmers_page_image')->store('uploads', 'public');
+        } elseif (! empty($data['farmers_page_image_url'])) {
+            $data['farmers_page_image_path'] = $data['farmers_page_image_url'];
+        }
 
-        foreach (['logo', 'hero_image', 'promo_image'] as $field) {
+        foreach (['logo', 'hero_image', 'promo_image', 'about_image', 'about_image_url', 'farmers_page_image', 'farmers_page_image_url'] as $field) {
             unset($data[$field]);
         }
         foreach ($data as $key => $value) {
@@ -223,7 +272,7 @@ class AdminController extends Controller
 
     public function orders()
     {
-        return view('admin.orders', ['orders' => Order::latest()->paginate(20)]);
+        return view('admin.orders', ['orders' => Order::with('items')->latest()->paginate(20)]);
     }
 
     public function users()

@@ -33,10 +33,10 @@
         <nav class="main-nav" id="store-navigation" aria-label="{{ __('Main navigation') }}">
             <a class="{{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">{{ __('Home') }}</a>
             <a class="{{ request()->routeIs('shop') ? 'active' : '' }}" href="{{ route('shop') }}">{{ __('Shop') }}</a>
-            <a href="{{ route('home') }}#farmers">{{ __('About Us') }}</a>
-            <a href="{{ route('home') }}#farmers">{{ __('Our Farmers') }}</a>
-            <a href="{{ route('home') }}#featured">{{ __('Blog') }}</a>
-            <a href="{{ route('home') }}#footer">{{ __('Contact') }}</a>
+            <a class="{{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about') }}">{{ __('About Us') }}</a>
+            <a class="{{ request()->routeIs('farmers') ? 'active' : '' }}" href="{{ route('farmers') }}">{{ __('Our Farmers') }}</a>
+            <a class="{{ request()->routeIs('blog.*') ? 'active' : '' }}" href="{{ route('blog.index') }}">{{ __('Blog') }}</a>
+            <a class="{{ request()->routeIs('contact') ? 'active' : '' }}" href="{{ route('contact') }}">{{ __('Contact') }}</a>
         </nav>
 
         <div class="header-search{{ request()->routeIs('shop') && request()->filled('q') ? ' is-open' : '' }}">

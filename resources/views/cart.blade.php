@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ __('Your cart') }} | {{ __($siteSettings['brand_name'] ?? 'Krishoker Jhuri') }}</title>
+    @include('partials.pwa-head')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="cart-page">
@@ -49,8 +50,7 @@
                 <aside class="cart-summary">
                     <h3>{{ __('Order summary') }}</h3>
                     <div class="summary-row"><span>{{ __('Subtotal') }}</span><strong>৳{{ \App\Support\LocalizedNumber::format($subtotal, 2) }}</strong></div>
-                    <div class="summary-row"><span>{{ __('Shipping') }}</span><strong>৳{{ \App\Support\LocalizedNumber::format($shipping, 2) }}</strong></div>
-                    <div class="summary-row total"><span>{{ __('Total') }}</span><strong>৳{{ \App\Support\LocalizedNumber::format($total, 2) }}</strong></div>
+                    <div class="summary-row"><span>{{ __('Delivery charge') }}</span><strong>{{ __('Calculated at checkout') }}</strong></div>
                     <a class="primary-button" href="{{ route('checkout') }}">{{ __('Proceed to checkout') }}</a>
                 </aside>
             </div>

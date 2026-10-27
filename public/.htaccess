@@ -15,6 +15,9 @@
     </IfModule>
 
     <IfModule mod_headers.c>
+        <FilesMatch "^(?:sw\.js|manifest\.webmanifest)$">
+            Header set Cache-Control "no-cache"
+        </FilesMatch>
         <FilesMatch "\.(?:jpe?g|png|webp|svg|ttf|woff2?)$">
             Header set Cache-Control "public, max-age=2592000"
         </FilesMatch>

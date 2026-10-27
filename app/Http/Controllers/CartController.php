@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\SiteSetting;
+use App\Support\DeliveryCharge;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 class CartController extends Controller
@@ -15,12 +17,10 @@ class CartController extends Controller
     {
         $items = $this->currentItems();
         $subtotal = $items->sum(fn ($item) => (float) $item->price * (int) $item->quantity);
-        $shipping = $items->isEmpty() ? 0 : 75;
-        $total = $subtotal + $shipping;
         $cartCount = collect(session('cart', []))->sum('quantity');
         $siteSettings = SiteSetting::values();
 
-        return view('cart', compact('items', 'subtotal', 'shipping', 'total', 'cartCount', 'siteSettings'));
+        return view('cart', compact('items', 'subtotal', 'cartCount', 'siteSettings'));
     }
 
     public function update(Request $request, string $id)
@@ -54,7 +54,7 @@ class CartController extends Controller
         return redirect()->route('cart')->with('success', 'Item removed from cart.');
     }
 
-    public function checkout()
+    public function checkout(Request $request)
     {
         $items = $this->currentItems();
         if ($items->isEmpty()) {
@@ -67,12 +67,14 @@ class CartController extends Controller
         }
 
         $subtotal = $items->sum(fn ($item) => (float) $item->price * (int) $item->quantity);
-        $shipping = 75;
+        $siteSettings = SiteSetting::values();
+        $deliveryCharges = DeliveryCharge::amounts($siteSettings);
+        $district = (string) old('district', '');
+        $shipping = DeliveryCharge::forDistrict($district, $siteSettings);
         $total = $subtotal + $shipping;
         $cartCount = collect(session('cart', []))->sum('quantity');
-        $siteSettings = SiteSetting::values();
 
-        return view('checkout', compact('items', 'subtotal', 'shipping', 'total', 'cartCount', 'siteSettings'));
+        return view('checkout', compact('items', 'subtotal', 'shipping', 'total', 'cartCount', 'siteSettings', 'deliveryCharges', 'district'));
     }
 
     public function placeOrder(Request $request)
@@ -85,13 +87,16 @@ class CartController extends Controller
             'district' => ['required', 'string', 'max:100'],
             'payment_method' => ['required', 'in:cod'],
         ]);
+        $data['district'] = trim($data['district']);
 
         $cart = session('cart', []);
         if (empty($cart)) {
             return redirect()->route('cart')->withErrors(['cart' => 'Your cart is empty.']);
         }
 
-        $order = DB::transaction(function () use ($data, $cart) {
+        $shipping = DeliveryCharge::forDistrict($data['district'], SiteSetting::values());
+
+        $order = DB::transaction(function () use ($data, $cart, $shipping) {
             $products = Product::query()
                 ->whereIn('id', array_keys($cart))
                 ->lockForUpdate()
@@ -110,7 +115,6 @@ class CartController extends Controller
                 $subtotal += (float) $product->price * $quantity;
             }
 
-            $shipping = 75;
             $order = Order::create([
                 ...$data,
                 'order_number' => 'KJ-'.strtoupper(Str::random(12)),
@@ -150,6 +154,9 @@ class CartController extends Controller
             'order' => $order,
             'siteSettings' => SiteSetting::values(),
             'cartCount' => collect(session('cart', []))->sum('quantity'),
+            'invoiceUrl' => URL::signedRoute('orders.invoice', [
+                'orderNumber' => $order->order_number,
+            ]),
         ]);
     }
 

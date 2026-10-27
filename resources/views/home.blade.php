@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ __($siteSettings['brand_name'] ?? 'Krishoker Jhuri') }}</title>
     <meta name="description" content="{{ __($siteSettings['hero_description'] ?? 'Fresh from farmers to your home.') }}">
+    @include('partials.pwa-head')
     <link rel="preload" as="image" href="{{ $siteSettings['hero_image_path'] ?? asset('images/home-harvest.jpg') }}" fetchpriority="high">
     <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -132,34 +133,6 @@
         </section>
     </main>
 
-    <footer class="site-footer reference-footer" id="footer">
-        <div class="container reference-footer-inner">
-            <div class="reference-footer-brand">
-                <strong>{{ __($siteSettings['brand_name'] ?? 'Krishoker Jhuri') }}</strong>
-                <span aria-hidden="true">|</span>
-                <span>{{ __($siteSettings['tagline'] ?? 'Fresh from Farmers • Pure for You') }}</span>
-                <span class="reference-footer-copyright">&copy; {{ now()->year }} {{ __($siteSettings['brand_name'] ?? 'Krishoker Jhuri') }}</span>
-            </div>
-            @if(!empty($siteSettings['social_facebook_url']) || !empty($siteSettings['social_instagram_url']) || !empty($siteSettings['social_youtube_url']))
-                <nav class="reference-footer-social" aria-label="{{ __('Social media') }}">
-                    @if(!empty($siteSettings['social_facebook_url']))
-                        <a href="{{ $siteSettings['social_facebook_url'] }}" target="_blank" rel="noopener noreferrer" aria-label="{{ __('Facebook') }}" title="{{ __('Facebook') }}">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 8h3V4h-3c-3 0-5 2-5 5v2H6v4h3v5h4v-5h3l1-4h-4V9c0-.7.3-1 1-1Z"/></svg>
-                        </a>
-                    @endif
-                    @if(!empty($siteSettings['social_instagram_url']))
-                        <a href="{{ $siteSettings['social_instagram_url'] }}" target="_blank" rel="noopener noreferrer" aria-label="{{ __('Instagram') }}" title="{{ __('Instagram') }}">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.8" r=".7" fill="currentColor" stroke="none"/></svg>
-                        </a>
-                    @endif
-                    @if(!empty($siteSettings['social_youtube_url']))
-                        <a href="{{ $siteSettings['social_youtube_url'] }}" target="_blank" rel="noopener noreferrer" aria-label="{{ __('YouTube') }}" title="{{ __('YouTube') }}">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/></svg>
-                        </a>
-                    @endif
-                </nav>
-            @endif
-        </div>
-    </footer>
+    @include('partials.store-footer')
 </body>
 </html>

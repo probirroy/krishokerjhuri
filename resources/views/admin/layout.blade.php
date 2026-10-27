@@ -17,6 +17,7 @@
                 <a class="{{ request()->routeIs('admin.orders') ? 'active' : '' }}" href="{{ route('admin.orders') }}">Orders</a>
                 <a class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Admin access</a>
                 <a class="{{ request()->routeIs('admin.content*') ? 'active' : '' }}" href="{{ route('admin.content') }}">Store content</a>
+                <a class="{{ request()->routeIs('admin.blog-posts.*') ? 'active' : '' }}" href="{{ route('admin.blog-posts.index') }}">Blog posts</a>
             </nav>
             <div class="admin-sidebar-bottom">
                 <a href="{{ route('home') }}" target="_blank" rel="noopener">View storefront ↗</a>

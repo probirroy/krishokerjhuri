@@ -2,9 +2,12 @@
 
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\StorePageController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\BlogPostController;
 use App\Http\Controllers\Auth\CustomerAuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,13 +21,19 @@ Route::post('/language/{locale}', function (string $locale) {
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [CustomerAuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [CustomerAuthController::class, 'login'])->name('login.submit');
+    Route::post('/login', [CustomerAuthController::class, 'login'])->middleware('throttle:5,1')->name('login.submit');
     Route::get('/register', [CustomerAuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [CustomerAuthController::class, 'register'])->name('register.submit');
+    Route::post('/register', [CustomerAuthController::class, 'register'])->middleware('throttle:5,1')->name('register.submit');
 });
 Route::post('/logout', [CustomerAuthController::class, 'logout'])->middleware('auth')->name('logout');
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/about-us', [StorePageController::class, 'about'])->name('about');
+Route::get('/farmers', [StorePageController::class, 'farmers'])->name('farmers');
+Route::get('/blog', [StorePageController::class, 'blog'])->name('blog.index');
+Route::get('/blog/{slug}', [StorePageController::class, 'article'])->name('blog.show');
+Route::get('/contact', [StorePageController::class, 'contact'])->name('contact');
+Route::post('/contact', [StorePageController::class, 'sendContact'])->middleware('throttle:5,1')->name('contact.send');
 Route::get('/shop/{slug?}', [ProductController::class, 'index'])->name('shop');
 Route::post('/products/{product}/add-to-cart', [ProductController::class, 'addToCart'])->name('products.add_to_cart');
 Route::post('/products/{product}/quick-buy', [ProductController::class, 'quickBuy'])->name('products.quick_buy');
@@ -35,10 +44,13 @@ Route::post('/cart/{id}/remove', [CartController::class, 'remove'])->name('cart.
 Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
 Route::post('/checkout', [CartController::class, 'placeOrder'])->name('checkout.place');
 Route::get('/orders/{orderNumber}', [CartController::class, 'confirmation'])->name('orders.confirmation');
+Route::get('/orders/{orderNumber}/invoice', [InvoiceController::class, 'customer'])
+    ->middleware('signed')
+    ->name('orders.invoice');
 
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AdminAuthController::class, 'login'])->name('login.submit');
+    Route::post('/login', [AdminAuthController::class, 'login'])->middleware('throttle:5,1')->name('login.submit');
 
     Route::middleware(['auth', 'admin'])->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
@@ -55,7 +67,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/categories/{category}', [AdminController::class, 'deleteCategory'])->name('categories.delete');
         Route::get('/content', [AdminController::class, 'content'])->name('content');
         Route::put('/content', [AdminController::class, 'updateContent'])->name('content.update');
+        Route::resource('/blog-posts', BlogPostController::class)->except(['show'])->names('blog-posts');
         Route::get('/orders', [AdminController::class, 'orders'])->name('orders');
+        Route::get('/orders/{order}/invoice', [InvoiceController::class, 'admin'])->name('orders.invoice');
         Route::put('/orders/{order}', [AdminController::class, 'updateOrder'])->name('orders.update');
         Route::get('/users', [AdminController::class, 'users'])->name('users.index');
         Route::put('/users/{user}/admin-access', [AdminController::class, 'updateAdminAccess'])->name('users.admin-access');

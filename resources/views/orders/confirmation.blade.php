@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ __('Order received') }} | {{ __($siteSettings['brand_name'] ?? 'Krishoker Jhuri') }}</title>
+    @include('partials.pwa-head')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
@@ -19,8 +20,11 @@
                 @foreach($order->items as $item)
                     <div class="summary-row"><span>{{ __($item->product_name) }} × {{ \App\Support\LocalizedNumber::format($item->quantity) }}</span><strong>৳{{ \App\Support\LocalizedNumber::format($item->line_total, 2) }}</strong></div>
                 @endforeach
+                <div class="summary-row"><span>{{ __('Subtotal') }}</span><strong>৳{{ \App\Support\LocalizedNumber::format($order->subtotal, 2) }}</strong></div>
+                <div class="summary-row"><span>{{ __('Delivery charge') }} · {{ strtolower(trim($order->district)) === 'dhaka' ? __('Inside Dhaka') : __('Outside Dhaka') }}</span><strong>৳{{ \App\Support\LocalizedNumber::format($order->shipping, 2) }}</strong></div>
                 <div class="summary-row total"><span>{{ __('Total · Cash on delivery') }}</span><strong>৳{{ \App\Support\LocalizedNumber::format($order->total, 2) }}</strong></div>
             </div>
+            <a class="primary-button" href="{{ $invoiceUrl }}" rel="nofollow">{{ __('View / download invoice and shipping label') }}</a>
             <a class="primary-button" href="{{ route('shop') }}">{{ __('Continue shopping') }}</a>
         </div>
     </main>

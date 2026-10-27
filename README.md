@@ -4,7 +4,7 @@ A Laravel storefront for farm-fresh groceries, with product/category management,
 
 ## Requirements
 
-- PHP 8.2 or later with Laravel's required extensions
+- PHP 8.2 or later with Laravel's required extensions; use an actively supported, security-patched PHP release
 - Composer
 - Node.js and npm
 - SQLite for local development, or MySQL 8 for production
@@ -22,11 +22,13 @@ A Laravel storefront for farm-fresh groceries, with product/category management,
 
 In **Admin → Products**, set a cover image and optionally select up to 10 additional product photos. Product pages display the photos as a thumbnail gallery, and hovering over the main photo zooms it in.
 
+The storefront can be installed as a Progressive Web App from a supported browser's install option. Service workers require HTTPS in production (localhost is allowed for development). The app precaches its offline help page and icons and caches public static assets; it does not cache cart, checkout, account, order, or admin pages. Ordering and account features still require a network connection.
+
 ## Install on XAMPP (Windows)
 
 ### 1. Install and check the tools
 
-Install XAMPP with Apache and MySQL/MariaDB, Composer, and Node.js (which includes npm). Use PHP 8.2 or later. In the XAMPP Control Panel, start **MySQL**; start **Apache** too if you want to use the Apache virtual host below. Enable PHP's `pdo_mysql` extension in the `php.ini` used by XAMPP, then restart Apache.
+Install XAMPP with Apache and MySQL/MariaDB, Composer, and Node.js (which includes npm). Use PHP 8.2 or later, and keep both the command-line and Apache PHP runtimes on a currently supported, security-patched release. In the XAMPP Control Panel, start **MySQL**; start **Apache** too if you want to use the Apache virtual host below. Enable PHP's `pdo_mysql` extension in the `php.ini` used by XAMPP, then restart Apache.
 
 In PowerShell, check that the command-line PHP and Composer are available:
 
@@ -161,6 +163,8 @@ APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://your-domain.example
 APP_KEY=
+SESSION_ENCRYPT=true
+SESSION_SECURE_COOKIE=true
 
 DB_CONNECTION=mysql
 DB_HOST=HOST_PROVIDED_BY_YOUR_HOST
@@ -181,6 +185,8 @@ php artisan key:generate
 ```
 
 Restrict access to `.env`. Ensure the hosting account's PHP process can write to `storage` and `bootstrap/cache`; use the ownership and permissions recommended by the hosting provider rather than making the whole application world-writable.
+
+The application encrypts session data by default and sets secure session cookies in production. Keep these session settings enabled over HTTPS. Login and registration submissions are rate-limited, and responses include browser security headers; Strict-Transport-Security is added only for HTTPS requests.
 
 ### 4. Initialize production
 
@@ -209,10 +215,25 @@ Enable the host's SSL certificate and force HTTPS using the host's recommended s
 
 ### Production performance settings
 
+- A fixed sub-millisecond page-load guarantee is not possible: browser rendering, server response, and network latency vary by device, hosting, and connection. Measure production over representative devices and networks, and track server TTFB and Core Web Vitals rather than relying on local debug-server timings.
 - Keep Apache `mod_deflate`, `mod_expires`, and `mod_headers` enabled and allow `.htaccess` overrides. `public/.htaccess` compresses text responses, gives uploaded/static images and fonts a one-month cache, and marks fingerprinted Vite assets immutable for one year. If the host uses Nginx, configure equivalent gzip/Brotli and cache headers in the virtual-host configuration; `.htaccess` is not read by Nginx.
 - Enable PHP OPcache in the hosting control panel or PHP-FPM configuration, and verify it is enabled for the web PHP runtime. Keep `APP_DEBUG=false` and run `php artisan optimize` for production deployments.
+- Use a shared Redis service for Laravel's cache and sessions when the host supports it, with low-latency placement near the app servers. Configure `CACHE_STORE=redis` and `SESSION_DRIVER=redis` in production only after Redis is provisioned and reachable by every app server. Storefront site settings are cached and automatically refreshed when edited.
 - Put a CDN in front of the site for edge delivery of `/build`, `/images`, `/fonts`, and `/storage`. Do not publicly cache HTML responses without a session-aware cache policy: storefront output can vary by language, cart session, and authentication.
 - Keep `npm run build` output deployed from `public/build`; those hashed files are safe to cache immutably. Rebuild and deploy them together whenever frontend assets change.
+
+### Scaling for high traffic
+
+No finite deployment can promise fast service for an unlimited number of simultaneous users. Capacity has to be sized and load-tested against an expected traffic profile, page mix, geography, and checkout rate. For growth beyond a single server:
+
+1. Serve static assets and product images from a CDN backed by object storage. Keep image variants appropriately sized and avoid routing static-file requests through PHP.
+2. Run multiple stateless Laravel/PHP-FPM app servers behind a load balancer. Keep application releases identical, use a shared Redis cache and session store across nodes, and never rely on a local file cache or local session storage.
+3. Use managed MySQL/PostgreSQL with connection limits, automated backups, monitoring, and a tested restore plan. Add read replicas only for read workloads that can tolerate replication delay; keep checkout stock validation and order writes on the primary database.
+4. Keep database transactions short and monitor connection pools, slow queries, lock waits, PHP-FPM saturation, Redis latency, and queue depth. The storefront query indexes are added by a migration; apply it with the normal production migration command.
+5. Run queue workers under a process supervisor only for background jobs that have been implemented. Add retries, idempotency, and alerting before moving order-critical work into a queue.
+6. Load-test a staging deployment with realistic catalog size, sessions, images, and checkout concurrency. Increase traffic gradually, define latency/error-rate targets, and scale app/database/cache capacity based on measured bottlenecks. Re-run tests after each scaling change.
+
+The PWA improves repeat visits and provides an offline fallback; it does not make checkout work offline or increase origin capacity. Avoid caching personalized HTML or order data in a CDN or service worker.
 
 ## Updating and maintaining a deployment
 
@@ -243,9 +264,15 @@ Customer accounts are available at `/register` and `/login`. Customers can regis
 - Session cart with stock checks and database-authoritative checkout prices
 - Customer account registration using email, mobile number, or both; sign-in accepts either identifier
 - Cash-on-delivery checkout, order confirmation, stock decrement, and order status management
+- District-based delivery fees (default ৳70 inside Dhaka and ৳150 outside Dhaka), configurable by administrators in **Admin → Store content** and saved with each order
+- Per-order A4 invoice and shipping label with customer/delivery details, Code 128 order barcode, product-link QR codes, and subtotal/delivery/total; customers use the signed invoice link on confirmation, while admins access documents from **Admin → Orders**
 - Separate administrator authentication at `/admin/login`
-- Admin dashboard for products, categories, orders, homepage copy, logo/banner/farmer images, and service-benefit text
+- Admin dashboard for products, categories, orders, homepage and About/Farmers/Blog/Contact page content, contact details, imagery, and service-benefit text
+- Public About, Our Farmers, Blog, and Contact pages; administrators manage page copy under **Store content** and create, edit, schedule, publish, or remove blog stories under **Blog posts**
+- Contact form sends customer inquiries to the administrator-configured contact email. Configure Laravel's `MAIL_*` settings in `.env` for a production mail provider
 - Image uploads are stored on Laravel's public filesystem disk
 
 Payment gateway processing, customer account profiles/order history, and automated delivery integration are not configured in this starter application.
+
+Invoice documents can be printed on A4 or downloaded as a standalone HTML file. To create a PDF, choose **Print / Save PDF** and select the browser's PDF destination. Customer invoice links are signed; admin invoice access requires an administrator session. Downloaded invoice files contain personal order information and should be handled securely.
 # krishokerjhuri

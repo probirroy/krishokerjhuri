@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Benefit;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\SiteSetting;
 use App\Models\User;
 use App\Models\FarmerFeature;
 use Database\Seeders\ProductCatalogMetadataSeeder;
@@ -403,14 +404,25 @@ class StorefrontAdminTest extends TestCase
             'promo_subtitle' => 'Farmer stories',
             'promo_description' => 'From local farms.',
             'promo_cta_label' => 'Meet them',
+            'delivery_inside_dhaka' => 80,
+            'delivery_outside_dhaka' => 160,
             'social_facebook_url' => 'https://www.facebook.com/krishokerjhuri',
             'social_instagram_url' => 'https://www.instagram.com/krishokerjhuri',
             'social_youtube_url' => 'https://www.youtube.com/@krishokerjhuri',
         ])->assertRedirect('/admin/content');
 
         $this->assertDatabaseHas('site_settings', ['key' => 'brand_name', 'value' => 'Jhuri Market']);
+        $this->assertDatabaseHas('site_settings', ['key' => 'delivery_inside_dhaka', 'value' => '80']);
+        $this->assertDatabaseHas('site_settings', ['key' => 'delivery_outside_dhaka', 'value' => '160']);
         $this->assertDatabaseHas('site_settings', ['key' => 'social_facebook_url', 'value' => 'https://www.facebook.com/krishokerjhuri']);
         $this->assertSame('Meet our growers', FarmerFeature::first()->title);
+        $this->actingAs($admin)
+            ->get('/admin/content')
+            ->assertOk()
+            ->assertSee('name="delivery_inside_dhaka"', false)
+            ->assertSee('value="80"', false)
+            ->assertSee('name="delivery_outside_dhaka"', false)
+            ->assertSee('value="160"', false);
         $this->get('/')
             ->assertOk()
             ->assertSee('Jhuri Market')
@@ -424,6 +436,13 @@ class StorefrontAdminTest extends TestCase
             'hero_title' => 'Fresh Harvest',
             'social_facebook_url' => 'javascript:alert(1)',
         ])->assertSessionHasErrors('social_facebook_url');
+
+        $this->from('/admin/content')->put('/admin/content', [
+            'brand_name' => 'Jhuri Market',
+            'hero_title' => 'Fresh Harvest',
+            'delivery_inside_dhaka' => -1,
+            'delivery_outside_dhaka' => 'not-a-price',
+        ])->assertSessionHasErrors(['delivery_inside_dhaka', 'delivery_outside_dhaka']);
     }
 
     public function test_demo_catalog_metadata_seeder_adds_professional_copy_and_sku(): void
@@ -583,7 +602,9 @@ class StorefrontAdminTest extends TestCase
         $this->withSession(['cart' => [$product->id => ['id' => $product->id, 'quantity' => 2]]])
             ->get('/checkout')
             ->assertOk()
-            ->assertSee('Cash on delivery');
+            ->assertSee('Cash on delivery')
+            ->assertSee('data-inside-charge="70"', false)
+            ->assertSee('data-outside-charge="150"', false);
 
         $this->withSession(['cart' => [$product->id => ['id' => $product->id, 'quantity' => 2]]])
             ->post('/checkout', [
@@ -597,10 +618,17 @@ class StorefrontAdminTest extends TestCase
             ->assertRedirect();
 
         $order = Order::with('items')->firstOrFail();
-        $this->assertSame(175.0, (float) $order->total);
+        $this->assertSame('Dhaka', $order->district);
+        $this->assertSame(70.0, (float) $order->shipping);
+        $this->assertSame(100.0, (float) $order->subtotal);
+        $this->assertSame(170.0, (float) $order->total);
         $this->assertSame(3, $product->fresh()->stock);
         $this->assertSame('Tomato', $order->items->first()->product_name);
-        $this->get('/orders/'.$order->order_number)->assertOk()->assertSee($order->order_number);
+        $this->get('/orders/'.$order->order_number)
+            ->assertOk()
+            ->assertSee($order->order_number)
+            ->assertSee('Subtotal')
+            ->assertSee('Inside Dhaka');
 
         $admin = User::factory()->create(['is_admin' => true]);
         $this->actingAs($admin)
@@ -611,5 +639,67 @@ class StorefrontAdminTest extends TestCase
         $this->put('/admin/orders/'.$order->id, ['status' => 'processing'])
             ->assertRedirect('/admin/orders');
         $this->assertSame(3, $product->fresh()->stock);
+    }
+
+    public function test_delivery_charge_uses_configured_fee_for_dhaka_and_other_districts(): void
+    {
+        SiteSetting::set('delivery_inside_dhaka', '85');
+        SiteSetting::set('delivery_outside_dhaka', '175');
+
+        $category = Category::create([
+            'name' => 'Vegetables',
+            'slug' => 'delivery-vegetables',
+            'is_active' => true,
+        ]);
+        $product = Product::create([
+            'category_id' => $category->id,
+            'name' => 'Delivery Test Tomato',
+            'slug' => 'delivery-test-tomato',
+            'unit' => 'kg',
+            'price' => 100,
+            'stock' => 5,
+            'is_active' => true,
+        ]);
+        $cart = [$product->id => ['id' => $product->id, 'quantity' => 1]];
+        $checkoutData = [
+            'customer_name' => 'Delivery Customer',
+            'email' => 'delivery@example.test',
+            'phone' => '01700000000',
+            'address' => '12 Farm Road',
+            'payment_method' => 'cod',
+        ];
+
+        $this->withSession(['cart' => $cart])
+            ->get('/checkout')
+            ->assertOk()
+            ->assertSee('data-inside-charge="85"', false)
+            ->assertSee('data-outside-charge="175"', false);
+
+        $this->withSession(['cart' => $cart])
+            ->post('/checkout', [...$checkoutData, 'district' => ' DhAkA '])
+            ->assertRedirect();
+
+        $insideOrder = Order::where('district', 'DhAkA')->firstOrFail();
+        $this->assertSame(85.0, (float) $insideOrder->shipping);
+        $this->assertSame(185.0, (float) $insideOrder->total);
+
+        $this->withSession(['cart' => $cart])
+            ->post('/checkout', [...$checkoutData, 'district' => 'Chattogram'])
+            ->assertRedirect();
+
+        $outsideOrder = Order::where('district', 'Chattogram')->firstOrFail();
+        $this->assertSame(175.0, (float) $outsideOrder->shipping);
+        $this->assertSame(275.0, (float) $outsideOrder->total);
+        $this->get('/orders/'.$outsideOrder->order_number)
+            ->assertOk()
+            ->assertSee('Outside Dhaka')
+            ->assertSee('৳175.00');
+
+        $admin = User::factory()->create(['is_admin' => true]);
+        $this->actingAs($admin)
+            ->get('/admin/orders')
+            ->assertOk()
+            ->assertSee('Subtotal')
+            ->assertSee('Delivery charge');
     }
 }
